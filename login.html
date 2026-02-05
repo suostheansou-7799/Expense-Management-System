@@ -516,6 +516,9 @@
             <div>
                 <input type="password" id="auth-password" placeholder="Password" required class="glass-input block w-full rounded-xl p-3">
             </div>
+            <div id="confirm-password-container" class="hidden">
+                <input type="password" id="auth-confirm-password" placeholder="Confirm Password" class="glass-input block w-full rounded-xl p-3">
+            </div>
             <div class="flex flex-col sm:flex-row justify-between items-center gap-2 text-sm">
                 <a href="#" id="forgot-password-btn" class="auth-link">Forgot password?</a>
                 <div class="text-center sm:text-right">
@@ -544,6 +547,18 @@
             Sign In with Google
         </button>
         <p class="mt-6 text-xs" style="color: var(--dark-text-muted);">Only authorized members can access this system.</p>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgot-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden">
+        <div class="bg-[var(--dark-surface)] rounded-2xl shadow-2xl p-8 w-full max-w-sm relative">
+            <button id="forgot-close-btn" class="absolute top-3 right-3 text-xl text-[var(--dark-text-muted)] hover:text-[var(--primary)] focus:outline-none"><i class="fas fa-times"></i></button>
+            <h3 class="text-2xl font-bold mb-2 text-center" style="color: var(--dark-text);">Forgot Password?</h3>
+            <p class="mb-4 text-center text-[var(--dark-text-secondary)]">Enter your email to receive a reset link.</p>
+            <input type="email" id="forgot-email" placeholder="Email Address" class="glass-input mb-4" required autocomplete="email">
+            <div id="forgot-feedback" class="text-center text-sm mb-3 min-h-[1.5em]"></div>
+            <button id="forgot-send-btn" class="btn-primary w-full">Send Reset Link</button>
+        </div>
     </div>
 
     <!-- Loading Screen -->
@@ -869,12 +884,25 @@
                 e.preventDefault();
                 const email = document.getElementById('auth-email').value.trim();
                 const password = document.getElementById('auth-password').value;
+                const confirmPassword = document.getElementById('auth-confirm-password').value;
                 const loginBtn = document.getElementById('login-btn');
                 const originalText = loginBtn.textContent;
 
                 if (!email || !password) {
                     showMessage('Please enter email and password.', 'error');
                     return;
+                }
+
+                // Validate confirm password for registration
+                if (authMode === 'register') {
+                    if (!confirmPassword) {
+                        showMessage('Please confirm your password.', 'error');
+                        return;
+                    }
+                    if (password !== confirmPassword) {
+                        showMessage('Passwords do not match.', 'error');
+                        return;
+                    }
                 }
 
                 loginBtn.disabled = true;
@@ -918,6 +946,8 @@
                 const loginBtn = document.getElementById('login-btn');
                 const titleEl = document.querySelector('#auth-screen h2');
                 const subtitleEl = document.querySelector('#auth-screen p');
+                const confirmPasswordContainer = document.getElementById('confirm-password-container');
+                const confirmPasswordInput = document.getElementById('auth-confirm-password');
 
                 if (authMode === 'register') {
                     toggleLink.textContent = 'Sign In';
@@ -925,29 +955,61 @@
                     loginBtn.textContent = 'Create Account';
                     titleEl.textContent = 'Create Account';
                     subtitleEl.textContent = 'Join your shared group expenses securely.';
+                    confirmPasswordContainer.classList.remove('hidden');
+                    confirmPasswordInput.setAttribute('required', 'required');
                 } else {
                     toggleLink.textContent = 'Create one';
                     toggleLink.previousElementSibling.textContent = "Don't have an account?";
                     loginBtn.textContent = 'Sign In';
                     titleEl.textContent = 'Welcome Back';
                     subtitleEl.textContent = 'Access your shared group expenses securely.';
+                    confirmPasswordContainer.classList.add('hidden');
+                    confirmPasswordInput.removeAttribute('required');
+                    confirmPasswordInput.value = '';
                 }
             });
 
             // Forgot Password
-            document.getElementById('forgot-password-btn').addEventListener('click', async(e) => {
+            // Forgot Password Modal Logic
+            const forgotModal = document.getElementById('forgot-modal');
+            const forgotBtn = document.getElementById('forgot-password-btn');
+            const forgotCloseBtn = document.getElementById('forgot-close-btn');
+            const forgotSendBtn = document.getElementById('forgot-send-btn');
+            const forgotEmailInput = document.getElementById('forgot-email');
+            const forgotFeedback = document.getElementById('forgot-feedback');
+
+            forgotBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                const email = document.getElementById('auth-email').value.trim();
+                forgotModal.classList.remove('hidden');
+                forgotEmailInput.value = document.getElementById('auth-email').value.trim();
+                forgotFeedback.textContent = '';
+                forgotSendBtn.disabled = false;
+            });
+
+            forgotCloseBtn.addEventListener('click', () => {
+                forgotModal.classList.add('hidden');
+            });
+
+            forgotSendBtn.addEventListener('click', async() => {
+                const email = forgotEmailInput.value.trim();
+                forgotFeedback.textContent = '';
                 if (!email) {
-                    showMessage('Please enter your email address first.', 'error');
+                    forgotFeedback.textContent = 'Please enter your email address.';
+                    forgotFeedback.className = 'text-center text-sm mb-3 min-h-[1.5em] text-red-400';
                     return;
                 }
+                forgotSendBtn.disabled = true;
+                forgotFeedback.textContent = 'Sending...';
+                forgotFeedback.className = 'text-center text-sm mb-3 min-h-[1.5em] text-[var(--dark-text-muted)]';
                 try {
                     await auth.sendPasswordResetEmail(email);
-                    showMessage('Password reset email sent! Check your inbox.', 'success');
+                    forgotFeedback.textContent = 'Password reset email sent! Check your inbox.';
+                    forgotFeedback.className = 'text-center text-sm mb-3 min-h-[1.5em] text-green-400';
                 } catch (err) {
-                    console.error('Password reset error:', err);
-                    showMessage('Error: ' + err.message, 'error');
+                    forgotFeedback.textContent = 'Error: ' + (err.message || 'Failed to send reset email.');
+                    forgotFeedback.className = 'text-center text-sm mb-3 min-h-[1.5em] text-red-400';
+                } finally {
+                    forgotSendBtn.disabled = false;
                 }
             });
 

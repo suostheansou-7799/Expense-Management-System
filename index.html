@@ -40,7 +40,7 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="styles.css">
 
 
 </head>
@@ -357,14 +357,14 @@
                                 <div id="user-compact-view" class="user-selector-compact">
                                     <div class="user-display flex-1 flex items-center gap-2" id="user-display-name">
                                         <i class="fas fa-user text-indigo-500"></i>
-                                        <span id="user-display-text">Self</span>
+                                        <span id="user-display-text">Select User...</span>
                                     </div>
                                     <button type="button" id="change-user-btn" class="change-user-btn px-3 py-1 rounded-lg bg-indigo-100 text-indigo-700 text-xs font-semibold hover:bg-indigo-200 transition">Change</button>
                                 </div>
                                 <!-- Full selector (hidden by default, shown when "Change" is clicked) -->
                                 <div class="relative flex items-center">
                                     <select id="user" class="glass-input flex-1 rounded-xl text-gray-800 cursor-pointer user-selector-hidden min-w-0">
-                                        <option value="Self" selected>Self</option>
+                                        <option value="" disabled selected>Select User...</option>
                                     </select>
                                 </div>
                                 <div class="flex justify-center mt-3 mb-1">
@@ -535,14 +535,14 @@
                                 <!-- Compact view: shows auto-selected user with change option -->
                                 <div id="income-user-compact-view" class="user-selector-compact">
                                     <div class="user-display" id="income-user-display-name">
-                                        <i class="fas fa-user mr-2"></i><span id="income-user-display-text">Self</span>
+                                        <i class="fas fa-user mr-2"></i><span id="income-user-display-text">Select User...</span>
                                     </div>
                                     <button type="button" id="income-change-user-btn" class="change-user-btn">Change</button>
                                 </div>
                                 <!-- Full selector (hidden by default, shown when "Change" is clicked) -->
                                 <div class="relative flex items-center">
                                     <select id="income-user" class="glass-input flex-1 rounded-xl text-gray-800 cursor-pointer user-selector-hidden min-w-0">
-                                        <option value="Self" selected>Self</option>
+                                        <option value="" disabled selected>Select User...</option>
                                     </select>
                                 </div>
                                 <div class="flex justify-center mt-3 mb-1">
@@ -1351,7 +1351,7 @@
         // 🔐 ADMIN CONFIGURATION
         // ============================================
         const ADMIN_EMAILS = [
-            "makara605799@gmail.com" // ← Admin ដំបូង
+            "makara605799@gmail.com" // Primary Admin
         ];
 
         // User Roles & Status Constants
@@ -1564,17 +1564,17 @@
             const role = roleSelect ? roleSelect.value : 'user';
 
             if (!email) {
-                showMessage('សូមបំពេញ Email', 'error');
+                showMessage('Please enter an Email', 'error');
                 return;
             }
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                showMessage('Email មិនត្រឹមត្រូវ', 'error');
+                showMessage('Invalid Email format', 'error');
                 return;
             }
 
             const existingUser = allUsersData.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
             if (existingUser) {
-                showMessage('User នេះមានរួចហើយ', 'error');
+                showMessage('This user already exists', 'error');
                 return;
             }
 
@@ -1593,7 +1593,7 @@
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     createdBy: currentUser ? currentUser.email : 'admin'
                 });
-                showMessage('បានបន្ថែម User: ' + email, 'success');
+                showMessage('User added: ' + email, 'success');
                 closeAddUserModal();
                 loadAllUsers();
             } catch (error) {
@@ -1660,7 +1660,7 @@
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     updatedBy: currentUser ? currentUser.email : 'admin'
                 });
-                showMessage('បានកែប្រែព័ត៌មាន User', 'success');
+                showMessage('User information updated', 'success');
                 closeEditUserModal();
                 loadAllUsers();
             } catch (error) {
@@ -1730,14 +1730,14 @@
             try {
                 if (deleteType === 'hard') {
                     await db.collection('users').doc(userId).delete();
-                    showMessage('User បានលុបជាអចិន្ត្រៃយ៍', 'success');
+                    showMessage('User permanently deleted', 'success');
                 } else {
                     await db.collection('users').doc(userId).update({
                         status: 'deleted',
                         deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
                         deletedBy: currentUser ? currentUser.email : 'admin'
                     });
-                    showMessage('User បាន Disable (Soft Delete)', 'success');
+                    showMessage('User disabled (Soft Delete)', 'success');
                 }
                 closeDeleteUserModal();
                 loadAllUsers();
@@ -1759,7 +1759,7 @@
                 return;
             }
 
-            showMessage('កំពុង Sync users...', 'info');
+            showMessage('Syncing users...', 'info');
 
             try {
                 // Get all unique users from expenses and incomes
@@ -1821,9 +1821,9 @@
                 }
 
                 if (addedCount > 0) {
-                    showMessage('បាន Sync ' + addedCount + ' users ថ្មី!', 'success');
+                    showMessage('Synced ' + addedCount + ' new users!', 'success');
                 } else {
-                    showMessage('គ្មាន user ថ្មីត្រូវ sync ទេ', 'info');
+                    showMessage('No new users to sync', 'info');
                 }
 
                 loadAllUsers();
@@ -3472,7 +3472,7 @@
             if (filterStart) filterStart.setHours(0, 0, 0, 0);
             if (filterEnd) filterEnd.setHours(23, 59, 59, 999);
 
-            // ប្រើ startDate និង endDate ជាអាទិភាព
+            // Use startDate and endDate as priority
             if ((!startDate && !endDate) && month) {
                 const [year, mon] = month.split('-');
                 const lastDay = new Date(year, mon, 0).getDate();
@@ -3526,7 +3526,7 @@
                 sortBy
             } = currentIncomeFilters;
 
-            // ប្រើ startDate និង endDate ជាអាទិភាព
+            // Use startDate and endDate as priority
             if ((!startDate && !endDate) && month) {
                 const [year, mon] = month.split('-');
                 const lastDay = new Date(year, mon, 0).getDate();
@@ -4049,8 +4049,12 @@
             
             // Reset user selector to compact view with auto-selected user
             const userValue = getAutoSelectedUser();
-            document.getElementById('user').value = userValue;
-            showUserCompactView('user', userValue);
+            if (userValue) {
+                document.getElementById('user').value = userValue;
+                showUserCompactView('user', userValue);
+            } else {
+                document.getElementById('user-display-text').textContent = 'Select User...';
+            }
         }
 
         function resetIncomeForm() {
@@ -4065,21 +4069,74 @@
             
             // Reset user selector to compact view with auto-selected user
             const userValue = getAutoSelectedUser();
-            document.getElementById('income-user').value = userValue;
-            showUserCompactView('income-user', userValue);
+            if (userValue) {
+                document.getElementById('income-user').value = userValue;
+                showUserCompactView('income-user', userValue);
+            } else {
+                document.getElementById('income-user-display-text').textContent = 'Select User...';
+            }
         }
         
-        // Get the auto-selected user based on authenticated email
+        // Get the auto-selected user based on usage frequency stored in localStorage
         function getAutoSelectedUser() {
-            if (!currentUser || !currentUser.email) return 'Self';
+            const lastUser = localStorage.getItem('lastSelectedUser');
+            const userUsage = JSON.parse(localStorage.getItem('userUsageCount') || '{}');
             
-            const email = currentUser.email.toLowerCase();
-            // Map email to user name
-            if (email.includes('theansea')) {
-                return 'Theansea';
+            // If there's a last selected user and it exists, use it
+            if (lastUser) {
+                return lastUser;
             }
-            // Default to 'Self' for other users
-            return 'Self';
+            
+            // Otherwise, find the most frequently used user
+            const entries = Object.entries(userUsage);
+            if (entries.length > 0) {
+                entries.sort((a, b) => b[1] - a[1]); // Sort by usage count descending
+                return entries[0][0]; // Return most used user
+            }
+            
+            // If no user history, return null to trigger first-time setup
+            return null;
+        }
+        
+        // Track user usage for auto-selection
+        function trackUserUsage(userName) {
+            if (!userName) return;
+            
+            // Save as last selected user
+            localStorage.setItem('lastSelectedUser', userName);
+            
+            // Increment usage count
+            const userUsage = JSON.parse(localStorage.getItem('userUsageCount') || '{}');
+            userUsage[userName] = (userUsage[userName] || 0) + 1;
+            localStorage.setItem('userUsageCount', JSON.stringify(userUsage));
+        }
+        
+        // Check if first-time user needs to set up their name
+        function isFirstTimeUser() {
+            const savedUsers = localStorage.getItem('customUsers');
+            const lastUser = localStorage.getItem('lastSelectedUser');
+            return !savedUsers && !lastUser;
+        }
+        
+        // Show first-time user modal to prompt for name
+        function showFirstTimeUserModal() {
+            const addUserModal = document.getElementById('add-user-modal');
+            const addUserInput = document.getElementById('add-user-input');
+            const addUserError = document.getElementById('add-user-error');
+            const modalTitle = addUserModal?.querySelector('h3');
+            
+            if (addUserModal && addUserInput) {
+                // Update modal title for first-time user
+                if (modalTitle) {
+                    modalTitle.textContent = 'Enter Your Name';
+                }
+                addUserInput.value = '';
+                addUserInput.placeholder = 'Enter name...';
+                if (addUserError) addUserError.textContent = '';
+                addUserModal.classList.add('active');
+                addUserModal.style.display = 'flex';
+                setTimeout(() => addUserInput.focus(), 100);
+            }
         }
         
         // Show compact user view
@@ -4115,11 +4172,10 @@
             const userSelect = document.getElementById('user');
             if (!userSelect) return;
             
-            const defaultUsers = ['Self']; // Only Self is permanent default
             const customUsers = [];
             
             Array.from(userSelect.options).forEach(opt => {
-                if (!defaultUsers.includes(opt.value)) {
+                if (opt.value && opt.value !== '') {
                     customUsers.push(opt.value);
                 }
             });
@@ -4128,24 +4184,8 @@
             console.log('Saved custom users:', customUsers);
         }
         
-        // Migrate Theansea to localStorage (run once)
-        function migrateTheanseaToLocalStorage() {
-            const savedUsers = localStorage.getItem('customUsers');
-            let customUsers = savedUsers ? JSON.parse(savedUsers) : [];
-            
-            // Add Theansea if not already in the list
-            if (!customUsers.includes('Theansea')) {
-                customUsers.push('Theansea');
-                localStorage.setItem('customUsers', JSON.stringify(customUsers));
-                console.log('Migrated Theansea to localStorage');
-            }
-        }
-        
         // Load custom users from localStorage and add to select dropdowns
         function loadCustomUsers() {
-            // First, migrate Theansea if needed
-            migrateTheanseaToLocalStorage();
-            
             const savedUsers = localStorage.getItem('customUsers');
             if (!savedUsers) return;
             
@@ -4234,31 +4274,51 @@
             const incomeUserSelect = document.getElementById('income-user');
             const incomeChangeUserBtn = document.getElementById('income-change-user-btn');
             const incomeAddUserBtn = document.getElementById('income-add-user-btn');
+            
+            // Check if first-time user - show modal to add their name
+            if (isFirstTimeUser()) {
+                setTimeout(() => {
+                    showFirstTimeUserModal();
+                }, 500);
+            }
+            
             if (userSelect && changeUserBtn) {
-                userSelect.value = autoUser;
-                showUserCompactView('user', autoUser);
+                if (autoUser) {
+                    userSelect.value = autoUser;
+                    showUserCompactView('user', autoUser);
+                } else {
+                    // Show placeholder if no user selected yet
+                    document.getElementById('user-display-text').textContent = 'Select User...';
+                }
                 // Change button click handler
                 changeUserBtn.addEventListener('click', () => {
                     showUserFullSelector('user');
                 });
-                // When user changes selection, update compact view
+                // When user changes selection, update compact view and track usage
                 userSelect.addEventListener('change', () => {
                     const newValue = userSelect.value;
                     showUserCompactView('user', newValue);
+                    trackUserUsage(newValue);
                 });
             }
             // Setup income form user selector
             if (incomeUserSelect && incomeChangeUserBtn) {
-                incomeUserSelect.value = autoUser;
-                showUserCompactView('income-user', autoUser);
+                if (autoUser) {
+                    incomeUserSelect.value = autoUser;
+                    showUserCompactView('income-user', autoUser);
+                } else {
+                    // Show placeholder if no user selected yet
+                    document.getElementById('income-user-display-text').textContent = 'Select User...';
+                }
                 // Change button click handler
                 incomeChangeUserBtn.addEventListener('click', () => {
                     showUserFullSelector('income-user');
                 });
-                // When user changes selection, update compact view
+                // When user changes selection, update compact view and track usage
                 incomeUserSelect.addEventListener('change', () => {
                     const newValue = incomeUserSelect.value;
                     showUserCompactView('income-user', newValue);
+                    trackUserUsage(newValue);
                 });
             }
             // Add user button logic (separate for expense and income)
@@ -4285,12 +4345,12 @@
                 addUserConfirm.onclick = function() {
                     const newUser = addUserInput.value.trim();
                     if (!newUser) {
-                        addUserError.textContent = 'Please enter a user name.';
+                        addUserError.textContent = 'Please enter a name';
                         addUserInput.focus();
                         return;
                     }
-                    if (Array.from(userSelect.options).some(opt => opt.value.toLowerCase() === newUser.toLowerCase())) {
-                        addUserError.textContent = 'User already exists.';
+                    if (Array.from(userSelect.options).some(opt => opt.value && opt.value.toLowerCase() === newUser.toLowerCase())) {
+                        addUserError.textContent = 'This name already exists';
                         addUserInput.focus();
                         return;
                     }
@@ -4298,6 +4358,17 @@
                     addUserToAllSelects(newUser);
                     userSelect.value = newUser;
                     showUserCompactView('user', newUser);
+                    
+                    // Also update income user selector
+                    const incomeUserSelect = document.getElementById('income-user');
+                    if (incomeUserSelect) {
+                        incomeUserSelect.value = newUser;
+                        showUserCompactView('income-user', newUser);
+                    }
+                    
+                    // Track this user as the most recently used
+                    trackUserUsage(newUser);
+                    
                     addUserModal.classList.remove('active');
                     addUserModal.style.display = 'none';
                 };
@@ -4319,12 +4390,12 @@
                 addIncomeUserConfirm.onclick = function() {
                     const newUser = addIncomeUserInput.value.trim();
                     if (!newUser) {
-                        addIncomeUserError.textContent = 'Please enter a user name.';
+                        addIncomeUserError.textContent = 'Please enter a name';
                         addIncomeUserInput.focus();
                         return;
                     }
-                    if (Array.from(incomeUserSelect.options).some(opt => opt.value.toLowerCase() === newUser.toLowerCase())) {
-                        addIncomeUserError.textContent = 'User already exists.';
+                    if (Array.from(incomeUserSelect.options).some(opt => opt.value && opt.value.toLowerCase() === newUser.toLowerCase())) {
+                        addIncomeUserError.textContent = 'This name already exists';
                         addIncomeUserInput.focus();
                         return;
                     }
@@ -4332,6 +4403,17 @@
                     addUserToAllSelects(newUser);
                     incomeUserSelect.value = newUser;
                     showUserCompactView('income-user', newUser);
+                    
+                    // Also update expense user selector
+                    const userSelect = document.getElementById('user');
+                    if (userSelect) {
+                        userSelect.value = newUser;
+                        showUserCompactView('user', newUser);
+                    }
+                    
+                    // Track this user as the most recently used
+                    trackUserUsage(newUser);
+                    
                     addIncomeUserModal.classList.remove('active');
                     addIncomeUserModal.style.display = 'none';
                 };
@@ -4358,15 +4440,30 @@
             // Update expense user
             const userSelect = document.getElementById('user');
             if (userSelect) {
-                userSelect.value = autoUser;
-                showUserCompactView('user', autoUser);
+                if (autoUser) {
+                    userSelect.value = autoUser;
+                    showUserCompactView('user', autoUser);
+                } else {
+                    document.getElementById('user-display-text').textContent = 'Select User...';
+                }
             }
             
             // Update income user
             const incomeUserSelect = document.getElementById('income-user');
             if (incomeUserSelect) {
-                incomeUserSelect.value = autoUser;
-                showUserCompactView('income-user', autoUser);
+                if (autoUser) {
+                    incomeUserSelect.value = autoUser;
+                    showUserCompactView('income-user', autoUser);
+                } else {
+                    document.getElementById('income-user-display-text').textContent = 'Select User...';
+                }
+            }
+            
+            // Check if first-time user
+            if (isFirstTimeUser()) {
+                setTimeout(() => {
+                    showFirstTimeUserModal();
+                }, 500);
             }
         }
 
@@ -6851,4 +6948,4 @@
     </footer>
 </body>
 
-</html>
+</html>e
